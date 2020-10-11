@@ -5,6 +5,7 @@
 #ifndef LIBCNPY_H_
 #define LIBCNPY_H_
 
+#include<complex>
 #include<string>
 #include<stdexcept>
 #include<sstream>
@@ -63,7 +64,7 @@ namespace cnpy {
     using npz_t = std::map<std::string, NpyArray>;
 
     char BigEndianTest();
-    char map_type(const std::type_info& t);
+    template<typename T> char map_type();
     template<typename T> std::vector<char> create_npy_header(const std::vector<size_t>& shape);
     void parse_npy_header(FILE* fp,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order);
     void parse_npy_header(unsigned char* buffer,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order);
@@ -79,6 +80,19 @@ namespace cnpy {
             lhs.push_back(val);
         }
         return lhs;
+    }
+
+    template<typename T> char map_type() {
+      if constexpr (std::is_same_v<T, bool>) return 'b';
+      if constexpr (std::is_integral_v<T>) {
+        if constexpr (std::is_signed_v<T>) return 'i';
+        else return 'u';
+      }
+      if constexpr (std::is_floating_point_v<T>) return 'f';
+      if constexpr (std::is_same_v<T, std::complex<float>>) return 'c';
+      if constexpr (std::is_same_v<T, std::complex<double>>) return 'c';
+      if constexpr (std::is_same_v<T, std::complex<long double>>) return 'c';
+      return '?';
     }
 
     template<> std::vector<char>& operator+=(std::vector<char>& lhs, const std::string rhs);
@@ -237,7 +251,7 @@ namespace cnpy {
         std::vector<char> dict;
         dict += "{'descr': '";
         dict += BigEndianTest();
-        dict += map_type(typeid(T));
+        dict += map_type<T>();
         dict += std::to_string(sizeof(T));
         dict += "', 'fortran_order': False, 'shape': (";
         dict += std::to_string(shape[0]);
