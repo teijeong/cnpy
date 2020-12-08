@@ -1,6 +1,7 @@
-#include "cnpy.h"
 #include <cstdint>
 #include <vector>
+
+#include "cnpy.h"
 
 int main() {
   cnpy::npy_save("chars.npy", std::vector<char>(20), {4, 5});
